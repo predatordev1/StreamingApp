@@ -3,53 +3,128 @@ pipeline {
     
     triggers {
         githubPush()
-        githubPull()
     }
-    
+    environment {
+    AWS_ACCOUNT_ID = "975050024946"
+    AWS_REGION     = "us-east-1"
+    IMAGE_TAG      = "v${BUILD_NUMBER}"
+    ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    }
     stages {
         stage('Clone Github Repo') {
             steps {
                 sh '''
-                    git clone -b main https://github.com/predatordev1/git_assignment_HeroVired.git
+                    rm -rf StreamingApp/
+                    git clone -b main https://github.com/predatordev1/StreamingApp.git
                 '''
             }
         }
-        stage('Installation of flask') {
+        stage('Image Building for backend admin Services') {
             steps {
                 sh '''
-                    pip3 install flask
+                    cd StreamingApp/backend
+                    docker build -t adminservice -f adminService/Dockerfile .
                 '''
             }
         }
-        stage('Testing of flask app') {
+        stage('Image Building for backend auth Services') {
             steps {
                 sh '''
-                    cd git_assignment_HeroVired/CI-CD_Pipeline
-                    python3 ./ci_cd_app.py &
-                    sleep 5
-                    curl -f http://localhost:5000 || exit 1
-                    pkill -f ci_cd_app.py
+                    cd StreamingApp/backend
+                    docker build -t authservice -f authService/Dockerfile .
                 '''
             }
         }
-    }
+        stage('Image Building for backend chat Services') {
+            steps {
+                sh '''
+                    cd StreamingApp/backend
+                    docker build -t chatservice -f chatService/Dockerfile .
+                '''
+            }
+        }
+        stage('Image Building for backend streaming Services') {
+            steps {
+                sh '''
+                    cd StreamingApp/backend
+                    docker build -t streamingservice -f streamingService/Dockerfile .
+                '''
+            }
+        }
+        stage('Image Building for  frontend Services') {
+            steps {
+                sh '''
+                    cd StreamingApp/frontend
+                    docker build -t frontend .
+                '''
+            }
+        }
+        stage('Testing for both frontend and backend Services') {
+            steps {
+                sh '''
+                    cd StreamingApp/
+                    docker compose up -d
+                    sleep 30   # wait for services to be healthy
+                    docker compose down
+                '''
+            }
+        }
+        stage('Login to ECR Repo') {
+            steps {
+                sh '''
+                    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
+
+                '''
+            }
+        }
+        stage('Tagging of docker Images') {
+            steps {
+                sh '''
+                docker tag adminservice $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG
+                docker tag authservice $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG
+                docker tag chatservice $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG
+                docker tag streamingservice $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG
+                docker tag frontend $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG
+                '''
+            }
+        }
+        stage('Pushing of docker Images to ECR Repos') {
+            steps {
+                sh '''
+                docker push $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG
+                docker push $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG
+                docker push $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG
+                docker push $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG
+                docker push $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG
+                '''
+            }
+        }
+         }
     post {
+        always {
+        sh '''
+            docker rmi adminservice authservice chatservice streamingservice frontend || true
+            docker rmi $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG || true
+            docker rmi $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG || true
+            docker rmi $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG || true
+            docker rmi $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG || true
+            docker rmi $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG || true
+            docker system prune -f
+        '''
+        }
         success {
-            echo "Flask app works good, deploying now..."
-            sh '''
-                cp git_assignment_HeroVired/CI-CD_Pipeline/ci_cd_app.py \
-                   git_assignment_HeroVired/CI-CD_Pipeline/cicd_logs/
-            '''
+            echo "All Microservices tested and pushed to ECR successfully!"
+
             emailext (
-                subject: "SUCCESS: cicd_flask_app pipeline status",
-                body: "Pipeline succeeded. Flask app has been deployed successfully.",
+                subject: "SUCCESS: Streaming CICD pipeline status",
+                body: "Pipeline succeeded. Docker images pushed into ECR Successfully",
                 to: "devendra8182@gmail.com"
             )
         }
         failure {
-            echo "Pipeline failed, skipping deployment"
+            echo "Pipeline failed, skipping Pushing docker images to ECR"
             emailext (
-                subject: "FAILURE: cicd_flask_app pipeline failed",
+                subject: "FAILURE: Streaming CICD pipeline status",
                 body: "Pipeline failed. Please check Jenkins console output for details.",
                 to: "devendra8182@gmail.com"
             )
