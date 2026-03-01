@@ -18,3 +18,36 @@ All backend services share common database models and utilities through `backend
 Forked the main repository into GitHub account to Maintain version by syncing/pushing updates from the main repository as needed.
 
 <h2>Task 2: MERN Application Containerize the Application by Creating Dockerfiles for each component (Frontend and Backend)</h2>
+
+<h3>Docker files are created for all backend services like : adminService/adminService/adminService/adminService</h3>
+<img width="1062" height="929" alt="image" src="https://github.com/user-attachments/assets/15dc11b1-e87a-4ff3-b8d6-1b1792615ae3" />
+<img width="402" height="821" alt="image" src="https://github.com/user-attachments/assets/53220abf-5e36-4798-ac93-ea5054b52650" />
+<img width="592" height="457" alt="image" src="https://github.com/user-attachments/assets/f534ba7f-f053-4908-be02-a3a756753cc8" />
+<img width="452" height="452" alt="image" src="https://github.com/user-attachments/assets/76d9f9bf-3505-4231-a913-8437d32a1228" />
+<img width="863" height="418" alt="image" src="https://github.com/user-attachments/assets/6079d481-d35d-4520-b5c8-92f22cf4ecb1" />
+
+<h3>Docker files are created for Frontend along with Docker-Compose file.</h3>
+<img width="1792" height="820" alt="image" src="https://github.com/user-attachments/assets/9e417a38-fbd9-4aff-902d-18ce53e4cc92" />
+
+<h3> Creation of ECR Repos based on front-end and backend.
+ECR Repo for frontend and backend created.
+<img width="1157" height="416" alt="image" src="https://github.com/user-attachments/assets/c6fad4fd-3c0b-43b3-b15a-e5148f6fbed3" />
+<img width="1148" height="407" alt="image" src="https://github.com/user-attachments/assets/06695a71-3549-43f8-9e29-f199034ffcb9" />
+
+<h2>Task 3: Creation of pipeline and if success push those images to ECR repos.
+
+
+
+
+
+
+
+
+
+
+
+<h3> Docker images pushed to Respective ECR Repos.
+<img width="1812" height="630" alt="image" src="https://github.com/user-attachments/assets/14d86c5d-1f02-41f9-bb0c-25bd91f5cb64" />
+<img width="1900" height="826" alt="image" src="https://github.com/user-attachments/assets/71f96347-a913-40a2-93f4-20ad1cbcb8a0" />
+<img width="1320" height="391" alt="image" src="https://github.com/user-attachments/assets/c54d7aa6-6359-449e-8dc3-b1e3211ca8eb" />
+
