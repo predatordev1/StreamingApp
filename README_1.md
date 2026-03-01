@@ -47,6 +47,12 @@ Jenkins file created for complete flow from builing of Images to Pushing docker 
 <img width="1546" height="875" alt="image" src="https://github.com/user-attachments/assets/d0f474b2-aca6-430a-a170-ce92b81fa0af" />
 <img width="1490" height="907" alt="image" src="https://github.com/user-attachments/assets/bc1c5ae1-fff2-4c8b-9944-fb0428879410" />
 
+Open Jenkins webpage and configure Pipeline as per below.
+<img width="1082" height="787" alt="image" src="https://github.com/user-attachments/assets/b33d1451-edaa-4b93-9730-9b49a31500ec" />
+<img width="1126" height="391" alt="image" src="https://github.com/user-attachments/assets/2b242c4e-a621-4ee2-9b52-acaf04553d06" />
+<img width="1200" height="662" alt="image" src="https://github.com/user-attachments/assets/2644e663-d07a-47d4-91b8-7472c77cc032" />
+<img width="886" height="590" alt="image" src="https://github.com/user-attachments/assets/1b9e6a30-ea74-44fa-8e74-fd49c16f1760" />
+
 
 
 
