@@ -11,6 +11,22 @@ pipeline {
     ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
     stages {
+        stage('Verify AWS Access and login to ECR Repos') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                sh '''
+                    aws sts get-caller-identity
+                    aws ecr describe-repositories --region $AWS_REGION
+                    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
+                '''
+                }
+            }
+        }
         stage('Clone Github Repo') {
             steps {
                 sh '''
@@ -66,14 +82,6 @@ pipeline {
                     docker compose up -d
                     sleep 30   # wait for services to be healthy
                     docker compose down
-                '''
-            }
-        }
-        stage('Login to ECR Repo') {
-            steps {
-                sh '''
-                    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
-
                 '''
             }
         }
