@@ -34,7 +34,18 @@ ECR Repo for frontend and backend created.
 <img width="1157" height="416" alt="image" src="https://github.com/user-attachments/assets/c6fad4fd-3c0b-43b3-b15a-e5148f6fbed3" />
 <img width="1148" height="407" alt="image" src="https://github.com/user-attachments/assets/06695a71-3549-43f8-9e29-f199034ffcb9" />
 
-<h2>Task 3: Creation of pipeline and if success push those images to ECR repos.
+<h2>Task 3: Creation of pipeline and if success push those images to ECR repos.</h2>
+Jenkins file created for complete flow from builing of Images to Pushing docker images to ECR Server with Post Actions.
+
+```bash
+ Inlcuded below stages
+  - Testing of AWS Configuration to login ECR Repo.
+  - Building images for all Microservices
+  - Tagging all Created Docker images based on Frontend and backend scope.
+  - Post clean up and email notifications.
+```
+<img width="1546" height="875" alt="image" src="https://github.com/user-attachments/assets/d0f474b2-aca6-430a-a170-ce92b81fa0af" />
+<img width="1490" height="907" alt="image" src="https://github.com/user-attachments/assets/bc1c5ae1-fff2-4c8b-9944-fb0428879410" />
 
 
 
