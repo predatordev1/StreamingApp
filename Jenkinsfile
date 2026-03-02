@@ -127,8 +127,6 @@ pipeline {
                 to: 'devendra8182@gmail.com',
                 subject: "Pipeline Status: ${currentBuild.result}",
                 body: "Build ${env.BUILD_NUMBER} - ${currentBuild.result}",
-                smtpHost: 'smtp.gmail.com',
-                smtpPort: '587'
             )
         }
         failure {
