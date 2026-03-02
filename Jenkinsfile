@@ -123,10 +123,12 @@ pipeline {
         success {
             echo "All Microservices tested and pushed to ECR successfully!"
 
-            emailext (
-                subject: "SUCCESS: Streaming CICD pipeline status",
-                body: "Pipeline succeeded. Docker images pushed into ECR Successfully",
-                to: "devendra8182@gmail.com"
+            emailext(
+                to: 'devendra8182@gmail.com',
+                subject: "Pipeline Status: ${currentBuild.result}",
+                body: "Build ${env.BUILD_NUMBER} - ${currentBuild.result}",
+                smtpHost: 'smtp.gmail.com',
+                smtpPort: '587'
             )
         }
         failure {
