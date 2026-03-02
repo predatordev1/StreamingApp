@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/streamingapp';
+    const uri = process.env.MONGO_URI || 'mongodb+srv://devendra8182_db_user:h7bjVagR8ru8DFdo@devendra.io1nvag.mongodb.net/streamingapp';
     if (!mongoose.connection.readyState) {
       console.log('[admin/db] Connecting to MongoDB at:', uri);
       await mongoose.connect(uri, {
