@@ -53,18 +53,13 @@ Open Jenkins webpage and configure Pipeline as per below.
 <img width="1200" height="662" alt="image" src="https://github.com/user-attachments/assets/2644e663-d07a-47d4-91b8-7472c77cc032" />
 <img width="886" height="590" alt="image" src="https://github.com/user-attachments/assets/1b9e6a30-ea74-44fa-8e74-fd49c16f1760" />
 
-
-
-
-
-
-
-
-
-
+Jenkins Pipeline success and docker images are pushed using Jenkins.
+<img width="915" height="847" alt="image" src="https://github.com/user-attachments/assets/6251b414-3731-4ca1-8fa8-02d479f89074" />
+<img width="790" height="527" alt="image" src="https://github.com/user-attachments/assets/8b75bb4e-c516-4f35-a98a-611d340c31ca" />
+<img width="1225" height="755" alt="image" src="https://github.com/user-attachments/assets/817c11b5-d6c8-419c-ad38-8f60ed23f308" />
 
 <h3> Docker images pushed to Respective ECR Repos.
-<img width="1812" height="630" alt="image" src="https://github.com/user-attachments/assets/14d86c5d-1f02-41f9-bb0c-25bd91f5cb64" />
-<img width="1900" height="826" alt="image" src="https://github.com/user-attachments/assets/71f96347-a913-40a2-93f4-20ad1cbcb8a0" />
-<img width="1320" height="391" alt="image" src="https://github.com/user-attachments/assets/c54d7aa6-6359-449e-8dc3-b1e3211ca8eb" />
+<img width="1888" height="647" alt="image" src="https://github.com/user-attachments/assets/392cf330-2921-4439-94d5-182d921308c6" />
+<img width="1873" height="777" alt="image" src="https://github.com/user-attachments/assets/b1790ff6-724f-4fb3-8d86-31b827a94a99" />
+
 
