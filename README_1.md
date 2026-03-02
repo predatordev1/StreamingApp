@@ -62,5 +62,8 @@ Jenkins Pipeline success and docker images are pushed using Jenkins.
 <img width="1888" height="647" alt="image" src="https://github.com/user-attachments/assets/392cf330-2921-4439-94d5-182d921308c6" />
 <img width="1873" height="777" alt="image" src="https://github.com/user-attachments/assets/b1790ff6-724f-4fb3-8d86-31b827a94a99" />
 
+Pipeline auto started once i made any push.
+<img width="1436" height="672" alt="image" src="https://github.com/user-attachments/assets/7ef6a73f-c1ea-42a6-a0e3-13459d859e80" />
+
 <h2>Task 4: Creation of EKS Cluster and deployment app using HELM Package.</h2>
 
