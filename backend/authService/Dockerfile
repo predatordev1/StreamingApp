@@ -5,7 +5,7 @@ WORKDIR /app/authService
 COPY authService/package*.json ./
 RUN npm ci || npm install --production
 
-COPY . .
+COPY authService/. ./
 
 ENV NODE_ENV=production
 EXPOSE 3001
