@@ -55,6 +55,11 @@ app.get('/api/health', (_, res) => {
 
 app.use('/api/chat', require('./routes/chat.route'));
 
+// ✅ Direct GET route for quick testing
+app.get('/api/chat', (_, res) => {
+  res.json({ success: true, msg: 'chat endpoint works directly from index.js!' });
+});
+
 io.use((socket, next) => {
   const token =
     socket.handshake.auth?.token ||

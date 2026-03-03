@@ -1,3 +1,4 @@
+// index.js
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -6,6 +7,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// Allowed origins setup
 const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:3000')
   .split(',')
   .map((origin) => origin.trim())
@@ -38,6 +40,11 @@ const streamingRoutes = require('./routes/streaming.route');
 app.use('/api/health', healthRoutes);
 app.use('/api/streaming', streamingRoutes);
 
+// ✅ Direct GET route for quick testing
+app.get('/api/streaming', (req, res) => {
+  res.json({ success: true, msg: 'Streaming endpoint works directly from index.js!' });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -47,6 +54,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log(`Streaming service running on port ${PORT}`);
 });
