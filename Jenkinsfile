@@ -4,14 +4,16 @@ pipeline {
     triggers {
         githubPush()
     }
+
     environment {
-    AWS_ACCOUNT_ID = "975050024946"
-    AWS_REGION     = "us-east-1"
-    IMAGE_TAG      = "v${BUILD_NUMBER}"
-    ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        AWS_ACCOUNT_ID = "975050024946"
+        AWS_REGION     = "us-east-1"
+        IMAGE_TAG      = "v${BUILD_NUMBER}"
+        ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
+
     stages {
-        stage('Verify AWS Access and login to ECR Repos') {
+        stage('Verify AWS Access and Login to ECR') {
             steps {
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
@@ -19,15 +21,16 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                sh '''
-                    aws sts get-caller-identity
-                    aws ecr describe-repositories --region $AWS_REGION
-                    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
-                '''
+                    sh '''
+                        aws sts get-caller-identity
+                        aws ecr describe-repositories --region $AWS_REGION || true
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
+                    '''
                 }
             }
         }
-        stage('Clone Github Repo') {
+
+        stage('Clone GitHub Repo') {
             steps {
                 sh '''
                     rm -rf StreamingApp/
@@ -35,7 +38,8 @@ pipeline {
                 '''
             }
         }
-        stage('Image Building for backend admin Services') {
+
+        stage('Build Admin Service Image') {
             steps {
                 sh '''
                     cd StreamingApp/backend
@@ -43,7 +47,8 @@ pipeline {
                 '''
             }
         }
-        stage('Image Building for backend auth Services') {
+
+        stage('Build Auth Service Image') {
             steps {
                 sh '''
                     cd StreamingApp/backend
@@ -51,7 +56,8 @@ pipeline {
                 '''
             }
         }
-        stage('Image Building for backend chat Services') {
+
+        stage('Build Chat Service Image') {
             steps {
                 sh '''
                     cd StreamingApp/backend
@@ -59,7 +65,8 @@ pipeline {
                 '''
             }
         }
-        stage('Image Building for backend streaming Services') {
+
+        stage('Build Streaming Service Image') {
             steps {
                 sh '''
                     cd StreamingApp/backend
@@ -67,7 +74,8 @@ pipeline {
                 '''
             }
         }
-        stage('Image Building for  frontend Services') {
+
+        stage('Build Frontend Image') {
             steps {
                 sh '''
                     cd StreamingApp/frontend
@@ -75,7 +83,8 @@ pipeline {
                 '''
             }
         }
-        stage('Testing for both frontend and backend Services') {
+
+        stage('Test Services with Docker Compose (Mongo Local)') {
             steps {
                 sh '''
                     cd StreamingApp/
@@ -85,56 +94,58 @@ pipeline {
                 '''
             }
         }
-        stage('Tagging of docker Images') {
+
+        stage('Tag Images for ECR') {
             steps {
                 sh '''
-                docker tag adminservice $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG
-                docker tag authservice $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG
-                docker tag chatservice $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG
-                docker tag streamingservice $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG
-                docker tag frontend $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG
+                    docker tag adminservice $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG
+                    docker tag authservice $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG
+                    docker tag chatservice $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG
+                    docker tag streamingservice $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG
+                    docker tag frontend $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG
                 '''
             }
         }
-        stage('Pushing of docker Images to ECR Repos') {
+
+        stage('Push Images to ECR') {
             steps {
                 sh '''
-                docker push $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG
-                docker push $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG
-                docker push $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG
-                docker push $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG
-                docker push $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG
+                    docker push $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG
+                    docker push $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG
+                    docker push $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG
+                    docker push $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG
+                    docker push $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG
                 '''
             }
         }
-         }
+    }
+
     post {
         always {
-        sh '''
-            docker rmi adminservice authservice chatservice streamingservice frontend || true
-            docker rmi $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG || true
-            docker rmi $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG || true
-            docker rmi $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG || true
-            docker rmi $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG || true
-            docker rmi $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG || true
-            docker system prune -f
-        '''
+            sh '''
+                docker rmi adminservice authservice chatservice streamingservice frontend || true
+                docker rmi $ECR_URL/dev-streaming-app-backend:adminservice-$IMAGE_TAG || true
+                docker rmi $ECR_URL/dev-streaming-app-backend:authservice-$IMAGE_TAG || true
+                docker rmi $ECR_URL/dev-streaming-app-backend:chatservice-$IMAGE_TAG || true
+                docker rmi $ECR_URL/dev-streaming-app-backend:streamingservice-$IMAGE_TAG || true
+                docker rmi $ECR_URL/dev-streaming-app-frontend:frontend-$IMAGE_TAG || true
+                docker system prune -f
+            '''
         }
         success {
-            echo "All Microservices tested and pushed to ECR successfully!"
-
+            echo "All microservices tested and pushed to ECR successfully!"
             emailext(
                 to: 'devendra8182@gmail.com',
                 subject: "Pipeline Status: ${currentBuild.result}",
-                body: "Build ${env.BUILD_NUMBER} - ${currentBuild.result}",
+                body: "Build ${env.BUILD_NUMBER} - ${currentBuild.result}"
             )
         }
         failure {
-            echo "Pipeline failed, skipping Pushing docker images to ECR"
-            emailext (
+            echo "Pipeline failed, skipping push to ECR"
+            emailext(
+                to: "devendra8182@gmail.com",
                 subject: "FAILURE: Streaming CICD pipeline status",
-                body: "Pipeline failed. Please check Jenkins console output for details.",
-                to: "devendra8182@gmail.com"
+                body: "Pipeline failed. Please check Jenkins console output for details."
             )
         }
     }
