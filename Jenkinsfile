@@ -16,11 +16,11 @@ pipeline {
             steps {
                 sh '''
                     if command -v apk > /dev/null 2>&1; then
-                        apk add --no-cache aws-cli git curl
+                        sudo apk add --no-cache aws-cli git curl
                     elif command -v apt-get > /dev/null 2>&1; then
-                        apt-get update -y && apt-get install -y awscli git curl
+                        sudo apt-get update -y && apt-get install -y awscli git curl
                     elif command -v yum > /dev/null 2>&1; then
-                        yum install -y awscli git curl
+                        sudo yum install -y awscli git curl
                     else
                         echo "No supported package manager found"
                         exit 1
