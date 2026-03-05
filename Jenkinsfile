@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCOUNT_ID = "975050024946"
-        AWS_REGION     = "us-east-1"
-        IMAGE_TAG      = "v${BUILD_NUMBER}"
-        ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        AWS_CREDS_ID   = 'aws-credentials'
+        AWS_ACCOUNT_ID   = "975050024946"
+        AWS_REGION       = "us-east-1"
+        IMAGE_TAG        = "v${BUILD_NUMBER}"
+        ECR_REGISTRY     = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        AWS_CREDS_ID     = 'aws-credentials'
+        COMPOSE_PROJECT  = 'streamingapp'
     }
 
     stages {
@@ -72,38 +72,45 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     script {
-                        withEnv([
-                            "DOCKER_REGISTRY=${ECR_REGISTRY}",
-                            "TAG=${IMAGE_TAG}"
-                        ]) {
-                            // Step 1: Build images via docker-compose (produces local names)
-                            sh '''
-                                echo "Building all services..."
-                                echo "DOCKER_REGISTRY: ${DOCKER_REGISTRY}"
-                                echo "TAG: ${TAG}"
-                                docker compose -f docker-compose.yml build
-                                echo "Build completed for tag: ${TAG}"
-                            '''
+                        // Build with a fixed project name so image names are always predictable:
+                        //   docker-compose -p streamingapp  =>  streamingapp-auth
+                        //                                       streamingapp-streaming
+                        //                                       streamingapp-admin
+                        //                                       streamingapp-chat
+                        //                                       streamingapp-frontend
+                        sh """
+                            echo "Building all services with project name: ${COMPOSE_PROJECT}"
+                            docker compose -p ${COMPOSE_PROJECT} -f docker-compose.yml build
+                            echo "Build completed for tag: ${IMAGE_TAG}"
 
-                            // Step 2: Tag each local image with full ECR URL + build tag
-                            // KEY   = local image name that docker-compose produces
-                            // VALUE = ECR repository name used when pushing
-                            // !! Update keys to match your actual docker-compose service names !!
-                            def serviceMap = [
-                                'authservice'      : 'auth',
-                                'streamingservice' : 'streaming',
-                                'adminservice'     : 'admin',
-                                'chatservice'      : 'chat',
-                                'frontend'         : 'frontend'
-                            ]
+                            echo "--- Images produced by docker-compose ---"
+                            docker images | grep ${COMPOSE_PROJECT}
+                        """
 
-                            serviceMap.each { localName, ecrName ->
-                                sh """
-                                    echo "Tagging ${localName} -> ${ECR_REGISTRY}/${ecrName}:${IMAGE_TAG}"
-                                    docker tag ${localName} ${ECR_REGISTRY}/${ecrName}:${IMAGE_TAG}
-                                """
-                            }
-                            echo "All services tagged with ECR URL successfully."
+                        // Map: compose-produced name  =>  ECR repository name
+                        // docker-compose v2 uses hyphen:  {project}-{service}
+                        // docker-compose v1 uses underscore: {project}_{service}
+                        // We detect which separator was used at runtime
+                        def services = ['auth', 'streaming', 'admin', 'chat', 'frontend']
+
+                        for (String svc : services) {
+                            sh """
+                                # Try Compose v2 name first (hyphen), fall back to v1 (underscore)
+                                if docker image inspect ${COMPOSE_PROJECT}-${svc} > /dev/null 2>&1; then
+                                    LOCAL_IMAGE="${COMPOSE_PROJECT}-${svc}"
+                                elif docker image inspect ${COMPOSE_PROJECT}_${svc} > /dev/null 2>&1; then
+                                    LOCAL_IMAGE="${COMPOSE_PROJECT}_${svc}"
+                                else
+                                    echo "ERROR: Could not find local image for service '${svc}'."
+                                    echo "Available images:"
+                                    docker images
+                                    exit 1
+                                fi
+
+                                echo "Tagging \$LOCAL_IMAGE -> ${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
+                                docker tag \$LOCAL_IMAGE ${ECR_REGISTRY}/${svc}:${IMAGE_TAG}
+                                echo "Tagged successfully."
+                            """
                         }
                     }
                 }
@@ -120,18 +127,18 @@ pipeline {
                 ]]) {
                     script {
                         sh """
+                            echo "Re-authenticating to ECR..."
                             aws ecr get-login-password --region ${AWS_REGION} \
                                 | docker login --username AWS --password-stdin ${ECR_REGISTRY}
                         """
 
                         def services = ['auth', 'streaming', 'admin', 'chat', 'frontend']
 
-                        for (String service : services) {
-                            echo "Pushing service: ${service}"
+                        for (String svc : services) {
                             sh """
-                                echo "Pushing ${ECR_REGISTRY}/${service}:${IMAGE_TAG} ..."
-                                docker push ${ECR_REGISTRY}/${service}:${IMAGE_TAG}
-                                echo "Successfully pushed ${ECR_REGISTRY}/${service}:${IMAGE_TAG}"
+                                echo "Pushing ${ECR_REGISTRY}/${svc}:${IMAGE_TAG} ..."
+                                docker push ${ECR_REGISTRY}/${svc}:${IMAGE_TAG}
+                                echo "Successfully pushed ${svc}"
                             """
                         }
                     }
@@ -144,17 +151,24 @@ pipeline {
         always {
             echo "Cleaning up local Docker images..."
             sh '''
-                docker rmi adminservice     || true
-                docker rmi authservice      || true
-                docker rmi chatservice      || true
-                docker rmi streamingservice || true
-                docker rmi frontend         || true
+                # Remove compose-built images (both v1 and v2 naming conventions)
+                docker rmi ${COMPOSE_PROJECT}-auth      || true
+                docker rmi ${COMPOSE_PROJECT}-streaming || true
+                docker rmi ${COMPOSE_PROJECT}-admin     || true
+                docker rmi ${COMPOSE_PROJECT}-chat      || true
+                docker rmi ${COMPOSE_PROJECT}-frontend  || true
+                docker rmi ${COMPOSE_PROJECT}_auth      || true
+                docker rmi ${COMPOSE_PROJECT}_streaming || true
+                docker rmi ${COMPOSE_PROJECT}_admin     || true
+                docker rmi ${COMPOSE_PROJECT}_chat      || true
+                docker rmi ${COMPOSE_PROJECT}_frontend  || true
 
-                docker rmi $ECR_REGISTRY/admin:$IMAGE_TAG     || true
-                docker rmi $ECR_REGISTRY/auth:$IMAGE_TAG      || true
-                docker rmi $ECR_REGISTRY/chat:$IMAGE_TAG      || true
-                docker rmi $ECR_REGISTRY/streaming:$IMAGE_TAG || true
-                docker rmi $ECR_REGISTRY/frontend:$IMAGE_TAG  || true
+                # Remove ECR-tagged images
+                docker rmi ${ECR_REGISTRY}/auth:${IMAGE_TAG}      || true
+                docker rmi ${ECR_REGISTRY}/streaming:${IMAGE_TAG} || true
+                docker rmi ${ECR_REGISTRY}/admin:${IMAGE_TAG}     || true
+                docker rmi ${ECR_REGISTRY}/chat:${IMAGE_TAG}      || true
+                docker rmi ${ECR_REGISTRY}/frontend:${IMAGE_TAG}  || true
 
                 docker system prune -f
             '''
