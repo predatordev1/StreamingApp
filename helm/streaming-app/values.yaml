@@ -40,9 +40,8 @@ configMap:
   ADMIN_PORT: "3003"
   CHAT_PORT: "3004"
   MONGO_URI: "mongodb+srv://devendra8182_db_user:h7bjVagR8ru8DFdo@devendra.io1nvag.mongodb.net/streamingapp"
-  JWT_SECRET: "your_jwt_secret_here"
-  CLIENT_URLS: "http://localhost"
-  AWS_REGION: "us-east-1"
+  CLIENT_URLS: "http://abb778b4f1b074e96b0e11d90161e712-973608811.us-east-2.elb.amazonaws.com,http://localhost:3000"
+  AWS_REGION: "us-east-2"
   AWS_S3_BUCKET: "devendra-streamingapp"
   AWS_CDN_URL: "d30iatvbnvx8m.cloudfront.net"
 
