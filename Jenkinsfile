@@ -15,16 +15,27 @@ pipeline {
         stage('Install Prerequisites') {
             steps {
                 sh '''
-                    if command -v apk > /dev/null 2>&1; then
-                        sudo apk add --no-cache aws-cli git curl
-                    elif command -v apt-get > /dev/null 2>&1; then
-                        sudo apt-get update -y && apt-get install -y awscli git curl
-                    elif command -v yum > /dev/null 2>&1; then
-                        sudo yum install -y awscli git curl
+                    # Skip if aws-cli is already installed
+                    if command -v aws > /dev/null 2>&1; then
+                        echo "aws-cli already installed: $(aws --version)"
                     else
-                        echo "No supported package manager found"
-                        exit 1
+                        echo "Installing aws-cli and dependencies..."
+                        if command -v apk > /dev/null 2>&1; then
+                            apk add --no-cache aws-cli git curl
+                        elif command -v apt-get > /dev/null 2>&1; then
+                            apt-get update -y && apt-get install -y awscli git curl
+                        elif command -v yum > /dev/null 2>&1; then
+                            yum install -y awscli git curl
+                        else
+                            echo "ERROR: No supported package manager found (apk / apt-get / yum)"
+                            exit 1
+                        fi
                     fi
+
+                    echo "--- Tool versions ---"
+                    aws --version
+                    git --version
+                    docker --version
                 '''
             }
         }
