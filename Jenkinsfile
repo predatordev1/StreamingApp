@@ -15,7 +15,6 @@ pipeline {
         stage('Install Prerequisites') {
             steps {
                 sh '''
-                    # Skip if aws-cli is already installed
                     if command -v aws > /dev/null 2>&1; then
                         echo "aws-cli already installed: $(aws --version)"
                     else
@@ -27,11 +26,10 @@ pipeline {
                         elif command -v yum > /dev/null 2>&1; then
                             yum install -y awscli git curl
                         else
-                            echo "ERROR: No supported package manager found (apk / apt-get / yum)"
+                            echo "ERROR: No supported package manager found"
                             exit 1
                         fi
                     fi
-
                     echo "--- Tool versions ---"
                     aws --version
                     git --version
@@ -58,7 +56,7 @@ pipeline {
                         echo "Logging in to ECR..."
                         aws ecr get-login-password --region $AWS_REGION \
                             | docker login --username AWS --password-stdin $ECR_REGISTRY
-                        
+
                         echo "ECR login successful."
                     '''
                 }
@@ -78,13 +76,34 @@ pipeline {
                             "DOCKER_REGISTRY=${ECR_REGISTRY}",
                             "TAG=${IMAGE_TAG}"
                         ]) {
+                            // Step 1: Build images via docker-compose (produces local names)
                             sh '''
                                 echo "Building all services..."
                                 echo "DOCKER_REGISTRY: ${DOCKER_REGISTRY}"
                                 echo "TAG: ${TAG}"
-                                docker compose -f docker-compose.yml build
-                                echo "Build completed successfully for tag: ${TAG}"
+                                docker-compose -f docker-compose.yml build
+                                echo "Build completed for tag: ${TAG}"
                             '''
+
+                            // Step 2: Tag each local image with full ECR URL + build tag
+                            // KEY   = local image name that docker-compose produces
+                            // VALUE = ECR repository name used when pushing
+                            // !! Update keys to match your actual docker-compose service names !!
+                            def serviceMap = [
+                                'authservice'      : 'auth',
+                                'streamingservice' : 'streaming',
+                                'adminservice'     : 'admin',
+                                'chatservice'      : 'chat',
+                                'frontend'         : 'frontend'
+                            ]
+
+                            serviceMap.each { localName, ecrName ->
+                                sh """
+                                    echo "Tagging ${localName} -> ${ECR_REGISTRY}/${ecrName}:${IMAGE_TAG}"
+                                    docker tag ${localName} ${ECR_REGISTRY}/${ecrName}:${IMAGE_TAG}
+                                """
+                            }
+                            echo "All services tagged with ECR URL successfully."
                         }
                     }
                 }
@@ -100,7 +119,6 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     script {
-                        echo "Re-authenticating to ECR before push..."
                         sh """
                             aws ecr get-login-password --region ${AWS_REGION} \
                                 | docker login --username AWS --password-stdin ${ECR_REGISTRY}
@@ -126,11 +144,11 @@ pipeline {
         always {
             echo "Cleaning up local Docker images..."
             sh '''
-                docker rmi adminservice   || true
-                docker rmi authservice    || true
-                docker rmi chatservice    || true
+                docker rmi adminservice     || true
+                docker rmi authservice      || true
+                docker rmi chatservice      || true
                 docker rmi streamingservice || true
-                docker rmi frontend       || true
+                docker rmi frontend         || true
 
                 docker rmi $ECR_REGISTRY/admin:$IMAGE_TAG     || true
                 docker rmi $ECR_REGISTRY/auth:$IMAGE_TAG      || true
@@ -150,9 +168,9 @@ pipeline {
                 body: """
                     Build #${env.BUILD_NUMBER} completed successfully.
 
-                    Image Tag : ${env.IMAGE_TAG}
+                    Image Tag    : ${env.IMAGE_TAG}
                     ECR Registry : ${env.ECR_REGISTRY}
-                    Services Pushed : auth, streaming, admin, chat, frontend
+                    Services     : auth, streaming, admin, chat, frontend
 
                     View build: ${env.BUILD_URL}
                 """
