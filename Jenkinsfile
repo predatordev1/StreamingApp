@@ -82,7 +82,7 @@ pipeline {
                                 echo "Building all services..."
                                 echo "DOCKER_REGISTRY: ${DOCKER_REGISTRY}"
                                 echo "TAG: ${TAG}"
-                                docker-compose -f docker-compose.yml build
+                                docker compose -f docker-compose.yml build
                                 echo "Build completed successfully for tag: ${TAG}"
                             '''
                         }
