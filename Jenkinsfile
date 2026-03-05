@@ -77,7 +77,7 @@ pipeline {
                         // Build only the services that have a Dockerfile (skip mongo)
                         sh """
                             echo "Building application services (mongo is a pulled image, not built)..."
-                            docker-compose -p ${COMPOSE_PROJECT} -f docker-compose.yml build \
+                            docker compose -p ${COMPOSE_PROJECT} -f docker-compose.yml build \
                                 auth streaming admin chat frontend
 
                             echo "--- Images produced ---"
